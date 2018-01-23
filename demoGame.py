@@ -7,6 +7,9 @@ import sys
 # local imports
 from organisms import Prey, Predator
 
+# ARGPARSE
+show_world = '-blind' not in sys.argv
+
 # COLORS
 BLACK = 0, 0, 0
 WHITE = 255, 255, 255
@@ -22,7 +25,7 @@ CANVAS_HEIGHT = 480
 CANVAS_WIDTH = 640 
 
 # Prey
-PREY_POP = 50
+PREY_POP = 60
 PREY_SIZE = 2
 PREY_VELOCITY = 2
 PREY_COLOR = BLUE
@@ -33,24 +36,32 @@ PRED_SIZE = 5
 PRED_VELOCITY = 5
 PRED_COLOR = ORANGE
 
+# UNIVERSE
+GEN_TIME_LIMIT = 1000
+
 # Init Canvas
-pygame.init()
-screen = pygame.display.set_mode((CANVAS_WIDTH, CANVAS_HEIGHT))
-pygame.display.set_caption("Swarm Evolution")
-clock = pygame.time.Clock()
+if show_world:
+  pygame.init()
+  screen = pygame.display.set_mode((CANVAS_WIDTH, CANVAS_HEIGHT))
+  pygame.display.set_caption("Swarm Evolution")
+  clock = pygame.time.Clock()
 
 # intialize first generation of prey and predators
 prey = [Prey(PREY_SIZE, PREY_COLOR, PREY_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT) for i in xrange(PREY_POP)]
 predators = [Predator(PRED_SIZE, PRED_COLOR, PRED_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT) for i in xrange(PRED_POP)]
 
-def printStats():
+def getStats():
   # calc stats
   prey_eaten = sum([p.prey_eaten for p in predators])
   living_prey = PREY_POP - prey_eaten
 
   # init text object to display stats
-  status = "Living prey: %s, Prey eaten: %s" % (living_prey, prey_eaten)
-  text = basic_font.render(status, True, WHITE)
+  stats = "Living prey: %s, Prey eaten: %s" % (living_prey, prey_eaten)
+
+  return stats
+
+def printStatsToScreen():
+  text = basic_font.render(getStats(), True, WHITE)
   textrect = text.get_rect()
   textrect.centerx = screen.get_rect().centerx
   textrect.centery = screen.get_rect().centery
@@ -75,18 +86,24 @@ def updatePositions():
     p.updatePosition()
 
 # Universe loop, draws a new frame every iteration
-while 1:
-  clock.tick(50)
+ticks = GEN_TIME_LIMIT
+while ticks > 0:
+  if show_world:
+    clock.tick() # can pass an int (max framerate) to tick() to slow down time
+   
+    for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+        sys.exit()
  
-  for event in pygame.event.get():
-    if event.type == pygame.QUIT:
-      sys.exit()
- 
-  screen.fill(BLACK)
+    screen.fill(BLACK)
+    drawOrganisms() 
+    printStatsToScreen()
 
-  drawOrganisms() 
+    # Progress to the next frame of the universe
+    pygame.display.flip()
+
   updatePositions()
-  printStats()
 
-  # Progress to the next frame of the universe
-  pygame.display.flip()
+  ticks -= 1
+
+print getStats()
