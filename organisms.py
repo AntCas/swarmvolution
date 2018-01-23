@@ -15,13 +15,19 @@ class Organism:
     y_coord = random.randint(0, self.max_y)
     return {'x': x_coord, 'y': y_coord}
 
-  def getPosition(self):
-    return (self.position['x'], self.position['y'])
+  def getCoords(self):
+    return (self.getX(), self.getY())
+
+  def getX(self):
+    return self.position['x']
+
+  def getY(self):
+    return self.position['y']
 
   def updatePosition(self):
     # current coordinates
-    curr_x = self.position['x']
-    curr_y = self.position['y']
+    curr_x = self.getX()
+    curr_y = self.getY()
 
     # reverse direction if prey hits a wall
     if curr_x <= 0 or curr_x >= self.max_x:
@@ -44,6 +50,26 @@ class Organism:
 class Prey(Organism):
   def __init__(self, size, color, velocity, max_x, max_y):
     Organism.__init__(self, size, color, velocity, max_x, max_y)
+    self.is_alive = True
+
+  def isAlive(self):
+    return self.is_alive
+
+  def calcSurvival(self, predators):
+    def isEatenBy(p):
+        # assume predator and prey are circles
+        # check that distance between centers > sum of radii
+        prey_x = self.getX()
+        prey_y = self.getY()
+        pred_x = p.getX()
+        pred_y = p.getY()
+
+        return math.sqrt((prey_x - pred_x)**2 + (prey_y - pred_y)**2) <= self.size + p.size
+
+    for p in predators:
+        if isEatenBy(p):
+            self.is_alive = False
+            break
 
 class Predator(Organism):
   def __init__(self, size, color, velocity, max_x, max_y):

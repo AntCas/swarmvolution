@@ -51,13 +51,15 @@ while 1:
 
   # Draw all organisms
   for p in prey:
-    pygame.draw.circle(screen, p.color, p.getPosition(), p.size)
+    if p.isAlive():
+      pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
 
   for p in predators:
-    pygame.draw.circle(screen, p.color, p.getPosition(), p.size)
+    pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
 
   # Update Positions of all organisms
   for p in prey:
+    p.calcSurvival(predators)
     p.updatePosition()
 
   for p in predators:
