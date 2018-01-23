@@ -6,6 +6,8 @@ import sys
 # COLORS
 BLACK = 0, 0, 0
 WHITE = 255, 255, 255
+ORANGE = 255, 86, 0
+BLUE = 0, 169, 255
 
 # DIMENSIONS
 CANVAS_HEIGHT = 480
@@ -16,22 +18,28 @@ box_x = 300
 box_dir = 3
 
 # Prey
-prey_size = 5
-prey_pop = 50
-prey_velocity = 3
-prey_color = WHITE
+PREY_POP = 50
+PREY_SIZE = 2
+PREY_VELOCITY = 2
+PREY_COLOR = BLUE
+
+# PREDATOR
+PRED_POP = 5
+PRED_SIZE = 5
+PRED_VELOCITY = 5
+PRED_COLOR = ORANGE
 
 # Init Canvas
 pygame.init()
 screen = pygame.display.set_mode((CANVAS_WIDTH, CANVAS_HEIGHT))
-pygame.display.set_caption("Moving Box")
+pygame.display.set_caption("Swarm Evolution")
 clock = pygame.time.Clock()
 
-class Prey:
-  def __init__(self, size, color):
+class Organism:
+  def __init__(self, size, color, velocity):
     self.size = size
     self.color = color
-    self.velocity = prey_velocity
+    self.velocity = velocity
     self.position = self.getRandomPosition()
     self.orientation = math.radians(random.randint(1, 360))
 
@@ -66,8 +74,17 @@ class Prey:
     self.position['x'] = new_x
     self.position['y'] = new_y
 
-# intialize first generation of prey
-prey = [Prey(prey_size, prey_color) for i in xrange(prey_pop)]
+class Prey(Organism):
+  def __init__(self):
+    Organism.__init__(self, PREY_SIZE, PREY_COLOR, PREY_VELOCITY)
+
+class Predator(Organism):
+  def __init__(self):
+    Organism.__init__(self, PRED_SIZE, PRED_COLOR, PRED_VELOCITY)
+
+# intialize first generation of prey and predators
+prey = [Prey() for i in xrange(PREY_POP)]
+predators = [Predator() for i in xrange(PRED_POP)]
 
 # Universe loop, draws a new frame every iteration
 while 1:
@@ -90,12 +107,18 @@ while 1:
   pygame.draw.rect(screen, WHITE, (box_x, 200, 20, 20))
   pygame.draw.circle(screen, WHITE, (box_x, 250), 20)
 
-  # Draw all prey
+  # Draw all organisms
   for p in prey:
-    pygame.draw.circle(screen, WHITE, p.getPosition(), p.size)
+    pygame.draw.circle(screen, p.color, p.getPosition(), p.size)
 
-  # Update Positions of all prey
+  for p in predators:
+    pygame.draw.circle(screen, p.color, p.getPosition(), p.size)
+
+  # Update Positions of all organisms
   for p in prey:
+    p.updatePosition()
+
+  for p in predators:
     p.updatePosition()
 
   # Progress to the next frame of the universe
