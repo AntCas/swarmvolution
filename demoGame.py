@@ -13,10 +13,6 @@ BLUE = 0, 169, 255
 CANVAS_HEIGHT = 480
 CANVAS_WIDTH = 640 
 
-# Box
-box_x = 300
-box_dir = 3
-
 # Prey
 PREY_POP = 50
 PREY_SIZE = 2
@@ -95,17 +91,6 @@ while 1:
       sys.exit()
  
   screen.fill(BLACK)
-
-  box_x += box_dir
-  if box_x >= 620:
-    box_x = 620
-    box_dir = -3
-  elif box_x <= 0:
-    box_x = 0
-    box_dir = 3
- 
-  pygame.draw.rect(screen, WHITE, (box_x, 200, 20, 20))
-  pygame.draw.circle(screen, WHITE, (box_x, 250), 20)
 
   # Draw all organisms
   for p in prey:
