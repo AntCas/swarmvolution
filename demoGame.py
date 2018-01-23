@@ -1,7 +1,11 @@
+# system imports
 import math
 import pygame
 import random
 import sys
+
+# local imports
+from organisms import Prey, Predator
 
 # COLORS
 BLACK = 0, 0, 0
@@ -31,56 +35,9 @@ screen = pygame.display.set_mode((CANVAS_WIDTH, CANVAS_HEIGHT))
 pygame.display.set_caption("Swarm Evolution")
 clock = pygame.time.Clock()
 
-class Organism:
-  def __init__(self, size, color, velocity):
-    self.size = size
-    self.color = color
-    self.velocity = velocity
-    self.position = self.getRandomPosition()
-    self.orientation = math.radians(random.randint(1, 360))
-
-  def getRandomPosition(self):
-    x_coord = random.randint(0, CANVAS_WIDTH)
-    y_coord = random.randint(0, CANVAS_HEIGHT)
-    return {'x': x_coord, 'y': y_coord}
-
-  def getPosition(self):
-    return (self.position['x'], self.position['y'])
-
-  def updatePosition(self):
-    # current coordinates
-    curr_x = self.position['x']
-    curr_y = self.position['y']
-
-    # reverse direction if prey hits a wall
-    if curr_x <= 0 or curr_x >= CANVAS_WIDTH:
-      self.velocity *= -1
-    elif curr_y <= 0 or curr_y >= CANVAS_HEIGHT:
-      self.velocity *= -1
-
-    # how much organism will move in x and y direction?
-    x_delta = int(round(math.cos(self.orientation) * self.velocity)) 
-    y_delta = int(round(math.sin(self.orientation) * self.velocity))
-
-    # new coordinates
-    new_x = curr_x + x_delta
-    new_y = curr_y + y_delta
-
-    # update position
-    self.position['x'] = new_x
-    self.position['y'] = new_y
-
-class Prey(Organism):
-  def __init__(self):
-    Organism.__init__(self, PREY_SIZE, PREY_COLOR, PREY_VELOCITY)
-
-class Predator(Organism):
-  def __init__(self):
-    Organism.__init__(self, PRED_SIZE, PRED_COLOR, PRED_VELOCITY)
-
 # intialize first generation of prey and predators
-prey = [Prey() for i in xrange(PREY_POP)]
-predators = [Predator() for i in xrange(PRED_POP)]
+prey = [Prey(PREY_SIZE, PREY_COLOR, PREY_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT) for i in xrange(PREY_POP)]
+predators = [Predator(PRED_SIZE, PRED_COLOR, PRED_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT) for i in xrange(PRED_POP)]
 
 # Universe loop, draws a new frame every iteration
 while 1:
