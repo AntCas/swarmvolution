@@ -58,6 +58,22 @@ def printStats():
   # print stats
   screen.blit(text, textrect)
 
+def drawOrganisms():
+  for p in prey:
+    if p.isAlive():
+      pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
+
+  for p in predators:
+    pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
+
+def updatePositions():
+  for p in prey:
+    p.calcSurvival(predators) # kill off prey that have been eaten
+    p.updatePosition()
+
+  for p in predators:
+    p.updatePosition()
+
 # Universe loop, draws a new frame every iteration
 while 1:
   clock.tick(50)
@@ -68,22 +84,8 @@ while 1:
  
   screen.fill(BLACK)
 
-  # Draw all organisms
-  for p in prey:
-    if p.isAlive():
-      pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
-
-  for p in predators:
-    pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
-
-  # Update Positions of all organisms
-  for p in prey:
-    p.calcSurvival(predators)
-    p.updatePosition()
-
-  for p in predators:
-    p.updatePosition()
-
+  drawOrganisms() 
+  updatePositions()
   printStats()
 
   # Progress to the next frame of the universe
