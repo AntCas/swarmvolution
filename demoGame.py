@@ -43,6 +43,21 @@ clock = pygame.time.Clock()
 prey = [Prey(PREY_SIZE, PREY_COLOR, PREY_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT) for i in xrange(PREY_POP)]
 predators = [Predator(PRED_SIZE, PRED_COLOR, PRED_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT) for i in xrange(PRED_POP)]
 
+def printStats():
+  # calc stats
+  prey_eaten = sum([p.prey_eaten for p in predators])
+  living_prey = PREY_POP - prey_eaten
+
+  # init text object to display stats
+  status = "Living prey: %s, Prey eaten: %s" % (living_prey, prey_eaten)
+  text = basic_font.render(status, True, WHITE)
+  textrect = text.get_rect()
+  textrect.centerx = screen.get_rect().centerx
+  textrect.centery = screen.get_rect().centery
+
+  # print stats
+  screen.blit(text, textrect)
+
 # Universe loop, draws a new frame every iteration
 while 1:
   clock.tick(50)
@@ -69,19 +84,7 @@ while 1:
   for p in predators:
     p.updatePosition()
 
-  # calc stats
-  prey_eaten = sum([p.prey_eaten for p in predators])
-  living_prey = PREY_POP - prey_eaten
-
-  # init text object to display stats
-  status = "Living prey: %s, Prey eaten: %s" % (living_prey, prey_eaten)
-  text = basic_font.render(status, True, WHITE)
-  textrect = text.get_rect()
-  textrect.centerx = screen.get_rect().centerx
-  textrect.centery = screen.get_rect().centery
-
-  # print stats
-  screen.blit(text, textrect)
+  printStats()
 
   # Progress to the next frame of the universe
   pygame.display.flip()
