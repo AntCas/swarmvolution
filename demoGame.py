@@ -13,6 +13,10 @@ WHITE = 255, 255, 255
 ORANGE = 255, 86, 0
 BLUE = 0, 169, 255
 
+# FONTS
+pygame.font.init()
+basic_font = pygame.font.SysFont(None, 12)
+
 # DIMENSIONS
 CANVAS_HEIGHT = 480
 CANVAS_WIDTH = 640 
@@ -64,6 +68,20 @@ while 1:
 
   for p in predators:
     p.updatePosition()
+
+  # calc stats
+  prey_eaten = sum([p.prey_eaten for p in predators])
+  living_prey = PREY_POP - prey_eaten
+
+  # init text object to display stats
+  status = "Living prey: %s, Prey eaten: %s" % (living_prey, prey_eaten)
+  text = basic_font.render(status, True, WHITE)
+  textrect = text.get_rect()
+  textrect.centerx = screen.get_rect().centerx
+  textrect.centery = screen.get_rect().centery
+
+  # print stats
+  screen.blit(text, textrect)
 
   # Progress to the next frame of the universe
   pygame.display.flip()
