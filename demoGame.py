@@ -16,10 +16,6 @@ WHITE = 255, 255, 255
 ORANGE = 255, 86, 0
 BLUE = 0, 169, 255
 
-# FONTS
-pygame.font.init()
-basic_font = pygame.font.SysFont(None, 12)
-
 # DIMENSIONS
 CANVAS_HEIGHT = 480
 CANVAS_WIDTH = 640 
@@ -39,11 +35,17 @@ PRED_COLOR = ORANGE
 # UNIVERSE
 GEN_TIME_LIMIT = 1000
 
-# Init Canvas
 if show_world:
+  # init font
+  pygame.font.init()
+  basic_font = pygame.font.SysFont(None, 12)
+
+  # init canvas
   pygame.init()
   screen = pygame.display.set_mode((CANVAS_WIDTH, CANVAS_HEIGHT))
   pygame.display.set_caption("Swarm Evolution")
+
+  # init clock
   clock = pygame.time.Clock()
 
 # intialize first generation of prey and predators
@@ -79,8 +81,9 @@ def drawOrganisms():
 
 def updatePositions():
   for p in prey:
-    p.calcSurvival(predators) # kill off prey that have been eaten
-    p.updatePosition()
+    if p.isAlive():
+      p.calcSurvival(predators) # kill off prey that have been eaten
+      p.updatePosition()
 
   for p in predators:
     p.updatePosition()

@@ -66,12 +66,11 @@ class Prey(Organism):
 
         return math.sqrt((prey_x - pred_x)**2 + (prey_y - pred_y)**2) <= self.size + p.size
 
-    if self.is_alive:
-        for p in predators:
-            if isEatenBy(p):
-                p.eatPrey()
-                self.is_alive = False
-                break
+    for p in predators:
+        if isEatenBy(p):
+            p.eatPrey()
+            self.is_alive = False
+            break
 
 class Predator(Organism):
   def __init__(self, size, color, velocity, max_x, max_y):

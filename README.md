@@ -8,8 +8,9 @@ Will a group of neural-nets with aligned interests evolve cooperative behavior?
 * print stats, argparse
 
 # TODO:
-* Make more parameters and hyperparameters accesible from command line
+* Implement organism vision
 * Implement fitness functions for prey and predators
+* Make more parameters and hyperparameters accesible from command line
 * Add control via neural-net
 * Implement genetic algorithm
 * pickle neural-nets/universe for later use
