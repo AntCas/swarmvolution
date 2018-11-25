@@ -87,11 +87,15 @@ def drawOrganisms():
 def updatePositions():
   # We handle collissions for both types before updating positions so that
   # the world state doesn't change for one set of organisms before the other
-  for o in itertools.chain(prey, predators):
-    o.calcCollisions(itertools.chain(prey, predators))
 
-  for o in itertools.chain(prey, predators):
-    o.updatePosition()
+  # predators must be processed first so that they can eat before their prey dies
+  for o in itertools.chain(predators, prey):
+    if o.is_alive:
+      o.calcCollisions(itertools.chain(predators, prey))
+
+  for o in itertools.chain(predators, prey):
+    if o.is_alive:
+      o.updatePosition()
 
 # Universe loop, draws a new frame every iteration
 ticks = GEN_TIME_LIMIT

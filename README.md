@@ -10,8 +10,6 @@ Will a group of neural-nets with aligned interests evolve cooperative behavior?
 * have one iteration pass to detect all organism collision (instead of 4)
 * move behavior decisions into the organism classes
 * add organism type (PREY, PREDATOR) to organism class attributes
-
-# TODO:
 * fix stats summary (double counting things currently)
 
 # TODO:

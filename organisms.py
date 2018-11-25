@@ -3,6 +3,7 @@ import math, random
 
 class Organism(object):
   def __init__(self, o_type, size, color, velocity, max_x, max_y, vision_range):
+    self.is_alive = True
     self.o_type = o_type
     self.size = size # radius of organism
     self.base_color = color
@@ -71,9 +72,14 @@ class Organism(object):
       if id(self) == id(p):
         continue # Don't detect collisions with yourself
 
+      if not p.is_alive:
+        continue # Don't care about dead things
+
       data = self.detectCollisions(p)
       
       if data['collision']:
+        # if self.o_type == 'pred' and p.o_type == 'prey':
+        #  print "%s [%s], eats %s [%s]" % (id(self), self.o_type, id(p), p.o_type)
         handleCollision(p)
 
       if data['sees_p']:
@@ -122,7 +128,7 @@ class Organism(object):
     }
 
   def updatePosition(self):
-    print "I'm a %s seeing %s" % (self.base_color, self.inputLayer)
+    # print "I'm a %s seeing %s" % (self.o_type, self.o_type)
     # current coordinates
     curr_x = self.getX()
     curr_y = self.getY()
@@ -147,12 +153,11 @@ class Organism(object):
 
     # reset activations
     self.resetInputLayer()
-    print self.inputLayer
+    # print self.inputLayer
 
 class Prey(Organism):
   def __init__(self, o_type, size, color, velocity, max_x, max_y, vision):
     Organism.__init__(self, o_type, size, color, velocity, max_x, max_y, vision)
-    self.is_alive = True
 
   def isAlive(self):
     return self.is_alive
