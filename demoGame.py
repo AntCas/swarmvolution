@@ -23,14 +23,16 @@ CANVAS_WIDTH = 640
 # Prey
 PREY_POP = 60
 PREY_SIZE = 2
-PREY_VELOCITY = 2
+PREY_VELOCITY = 1
 PREY_COLOR = BLUE
+PREY_VISION = 50
 
 # PREDATOR
 PRED_POP = 5
 PRED_SIZE = 5
-PRED_VELOCITY = 5
+PRED_VELOCITY = 3
 PRED_COLOR = ORANGE
+PRED_VISION = 75
 
 # UNIVERSE
 GEN_TIME_LIMIT = 1000
@@ -49,8 +51,8 @@ if show_world:
   clock = pygame.time.Clock()
 
 # intialize first generation of prey and predators
-prey = [Prey(PREY_SIZE, PREY_COLOR, PREY_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT) for i in xrange(PREY_POP)]
-predators = [Predator(PRED_SIZE, PRED_COLOR, PRED_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT) for i in xrange(PRED_POP)]
+prey = [Prey(PREY_SIZE, PREY_COLOR, PREY_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PREY_VISION) for i in xrange(PREY_POP)]
+predators = [Predator(PRED_SIZE, PRED_COLOR, PRED_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PRED_VISION) for i in xrange(PRED_POP)]
 
 def getStats():
   # calc stats
@@ -80,9 +82,21 @@ def drawOrganisms():
     pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
 
 def updatePositions():
+  # We handle collissions for both types before updating positions so that
+  # the world state doesn't change for one set of organisms before the other
+
+  # Handle collissions (eating, senses)
   for p in prey:
     if p.isAlive():
-      p.calcSurvival(predators) # kill off prey that have been eaten
+      # Prey that collide with predators will be eaten
+      p.calcCollisions(predators, p.die) 
+
+  for p in predators:
+    p.calcCollisions(prey, p.eatPrey)
+
+  # Update positions
+  for p in prey:
+    if p.isAlive():
       p.updatePosition()
 
   for p in predators:
