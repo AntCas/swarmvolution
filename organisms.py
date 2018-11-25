@@ -1,8 +1,9 @@
 import math, random
 
 
-class Organism:
-  def __init__(self, size, color, velocity, max_x, max_y, vision_range):
+class Organism(object):
+  def __init__(self, o_type, size, color, velocity, max_x, max_y, vision_range):
+    self.o_type = o_type
     self.size = size # radius of organism
     self.base_color = color
     self.color = color
@@ -54,7 +55,7 @@ class Organism:
     result = {
       'collision': collision,
       'sees_p': sees_p,
-      'sameness': self.base_color == p.base_color,
+      'type': p.o_type,
       'above': above,
       'below': below,
       'left': left,
@@ -73,14 +74,14 @@ class Organism:
       data = self.detectCollisions(p)
       
       if data['collision']:
-        handleCollision()
+        handleCollision(p)
 
       if data['sees_p']:
         self.color = (255,255,255)
         saw_something = True
         for dirr in ['above', 'below', 'left', 'right']:
           if data[dirr]:
-            self.activate(dirr, data['dist'], data['sameness'])
+            self.activate(dirr, data['dist'], (self.o_type == data['type']))
 
     # reset color when out of sight range
     if not saw_something:
@@ -149,20 +150,34 @@ class Organism:
     print self.inputLayer
 
 class Prey(Organism):
-  def __init__(self, size, color, velocity, max_x, max_y, vision):
-    Organism.__init__(self, size, color, velocity, max_x, max_y, vision)
+  def __init__(self, o_type, size, color, velocity, max_x, max_y, vision):
+    Organism.__init__(self, o_type, size, color, velocity, max_x, max_y, vision)
     self.is_alive = True
 
   def isAlive(self):
     return self.is_alive
 
+  def calcCollisions(self, organisms):
+    def handleCollision(o):
+      if self.o_type != o.o_type:
+        self.die()
+
+    super(Prey, self).calcCollisions(organisms, handleCollision)
+
   def die(self):
     self.is_alive = False
 
 class Predator(Organism):
-  def __init__(self, size, color, velocity, max_x, max_y, vision):
-    Organism.__init__(self, size, color, velocity, max_x, max_y, vision)
+  def __init__(self, o_type, size, color, velocity, max_x, max_y, vision):
+    Organism.__init__(self, o_type, size, color, velocity, max_x, max_y, vision)
     self.prey_eaten = 0
+
+  def calcCollisions(self, organisms):
+    def handleCollision(o):
+      if self.o_type != o.o_type:
+        self.eatPrey()
+
+    super(Predator, self).calcCollisions(organisms, handleCollision)
 
   def eatPrey(self):
     self.prey_eaten += 1

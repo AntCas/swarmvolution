@@ -1,4 +1,5 @@
 # system imports
+import itertools
 import math
 import pygame
 import random
@@ -21,18 +22,20 @@ CANVAS_HEIGHT = 480
 CANVAS_WIDTH = 640 
 
 # Prey
+PREY_TYPE = 'prey'
 PREY_POP = 60
 PREY_SIZE = 2
 PREY_VELOCITY = 1
 PREY_COLOR = BLUE
-PREY_VISION = 50
+PREY_VISION = 25
 
 # PREDATOR
+PRED_TYPE = 'pred'
 PRED_POP = 5
 PRED_SIZE = 5
 PRED_VELOCITY = 3
 PRED_COLOR = ORANGE
-PRED_VISION = 75
+PRED_VISION = 50
 
 # UNIVERSE
 GEN_TIME_LIMIT = 1000
@@ -51,8 +54,8 @@ if show_world:
   clock = pygame.time.Clock()
 
 # intialize first generation of prey and predators
-prey = [Prey(PREY_SIZE, PREY_COLOR, PREY_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PREY_VISION) for i in xrange(PREY_POP)]
-predators = [Predator(PRED_SIZE, PRED_COLOR, PRED_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PRED_VISION) for i in xrange(PRED_POP)]
+prey = [Prey(PREY_TYPE, PREY_SIZE, PREY_COLOR, PREY_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PREY_VISION) for i in xrange(PREY_POP)]
+predators = [Predator(PRED_TYPE, PRED_SIZE, PRED_COLOR, PRED_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PRED_VISION) for i in xrange(PRED_POP)]
 
 def getStats():
   # calc stats
@@ -84,26 +87,11 @@ def drawOrganisms():
 def updatePositions():
   # We handle collissions for both types before updating positions so that
   # the world state doesn't change for one set of organisms before the other
+  for o in itertools.chain(prey, predators):
+    o.calcCollisions(itertools.chain(prey, predators))
 
-  # Handle collissions (eating, senses)
-  for p in prey:
-    if p.isAlive():
-      # Prey that collide with predators will be eaten
-      p.calcCollisions(predators, p.die) 
-      # Allow prey to see each other to facilitate cooperation
-      p.calcCollisions(prey, lambda *args: None) 
-
-  for p in predators:
-    p.calcCollisions(prey, p.eatPrey)
-    p.calcCollisions(predators, lambda *args: None) 
-
-  # Update positions
-  for p in prey:
-    if p.isAlive():
-      p.updatePosition()
-
-  for p in predators:
-    p.updatePosition()
+  for o in itertools.chain(prey, predators):
+    o.updatePosition()
 
 # Universe loop, draws a new frame every iteration
 ticks = GEN_TIME_LIMIT
