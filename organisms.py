@@ -1,9 +1,10 @@
 import math, random
 
+
 class Organism:
   def __init__(self, size, color, velocity, max_x, max_y, vision_range):
     self.size = size # radius of organism
-    self.default_color = color
+    self.base_color = color
     self.color = color
     self.velocity = velocity
     self.max_x = max_x
@@ -11,6 +12,13 @@ class Organism:
     self.vision_range = vision_range # how far can organims see
     self.position = self.getRandomPosition()
     self.orientation = math.radians(random.randint(1, 360))
+    self.inputLayer = {
+      # 'direction': [distance, isSame, isDiff]
+      'above': [0.0, 0, 0],
+      'below': [0.0, 0, 0],
+      'left': [0.0, 0, 0],
+      'right': [0.0, 0, 0]
+    }
 
   def detectCollisions(self, p):
     # assume predator and prey are circles
@@ -26,7 +34,7 @@ class Organism:
 
     # how far apart are the organisms
     dist_bt_centers = math.sqrt((s_x - p_x)**2 + (s_y - p_y)**2)
-    
+
     # Do they collide
     collision = dist_bt_centers <= self.size + p.size
 
@@ -34,21 +42,24 @@ class Organism:
     sees_p = dist_bt_centers <= self.size + p.size + self.vision_range
 
     # What direction is the other from self
-    above, below, left, right = False, False, False, False
+    above, below, left, right, dist = False, False, False, False, 0.0
     if sees_p:
       # one of each direction pair must be <= to prevent blindspot
       above = s_y <= p_y
       below = s_y > p_y
       left = s_x <= p_x
       right = s_x > p_x
+      dist = dist_bt_centers # only gets distance if p in sight range
 
     result = {
       'collision': collision,
       'sees_p': sees_p,
+      'sameness': self.base_color == p.base_color,
       'above': above,
       'below': below,
       'left': left,
-      'right': right
+      'right': right,
+      'dist': dist
     }
 
     return result
@@ -56,18 +67,35 @@ class Organism:
   def calcCollisions(self, organisms, handleCollision):
     saw_something = False
     for p in organisms:
+      if id(self) == id(p):
+        continue # Don't detect collisions with yourself
+
       data = self.detectCollisions(p)
       
       if data['collision']:
         handleCollision()
 
-      if not saw_something and data['sees_p']:
+      if data['sees_p']:
         self.color = (255,255,255)
         saw_something = True
+        for dirr in ['above', 'below', 'left', 'right']:
+          if data[dirr]:
+            self.activate(dirr, data['dist'], data['sameness'])
 
     # reset color when out of sight range
     if not saw_something:
-      self.color = self.default_color
+      self.color = self.base_color
+
+  def activate(self, dirr, dist, sameness):
+    # Vision activation values:
+    # 1.0 -> collision
+    # 0.0 -> nothing in range
+    activation = 1.0 - float(dist) / float(self.vision_range)
+
+    # neuron only detects closest other organism
+    if activation > self.inputLayer[dirr][0]:
+      #                       [ distance,  isSame,         isDiff       ]
+      self.inputLayer[dirr] = [activation, int(sameness), 1 - int(sameness)]
  
   def getRandomPosition(self):
     x_coord = random.randint(0, self.max_x)
@@ -83,7 +111,17 @@ class Organism:
   def getY(self):
     return self.position['y']
 
+  def resetInputLayer(self):
+    self.inputLayer = {
+      # 'direction': [distance, isPrey, isPredator]
+      'above': [0.0, 0, 0],
+      'below': [0.0, 0, 0],
+      'left': [0.0, 0, 0],
+      'right': [0.0, 0, 0]
+    }
+
   def updatePosition(self):
+    print "I'm a %s seeing %s" % (self.base_color, self.inputLayer)
     # current coordinates
     curr_x = self.getX()
     curr_y = self.getY()
@@ -105,6 +143,10 @@ class Organism:
     # update position
     self.position['x'] = new_x
     self.position['y'] = new_y
+
+    # reset activations
+    self.resetInputLayer()
+    print self.inputLayer
 
 class Prey(Organism):
   def __init__(self, size, color, velocity, max_x, max_y, vision):

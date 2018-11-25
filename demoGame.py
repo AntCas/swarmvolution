@@ -90,9 +90,12 @@ def updatePositions():
     if p.isAlive():
       # Prey that collide with predators will be eaten
       p.calcCollisions(predators, p.die) 
+      # Allow prey to see each other to facilitate cooperation
+      p.calcCollisions(prey, lambda *args: None) 
 
   for p in predators:
     p.calcCollisions(prey, p.eatPrey)
+    p.calcCollisions(predators, lambda *args: None) 
 
   # Update positions
   for p in prey:
