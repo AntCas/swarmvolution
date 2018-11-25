@@ -4,6 +4,9 @@ import math, random
 class Organism(object):
   def __init__(self, o_type, size, color, velocity, max_x, max_y, vision_range):
     self.is_alive = True
+    self.lifespan = 0
+
+    # input variables
     self.o_type = o_type
     self.size = size # radius of organism
     self.base_color = color
@@ -12,15 +15,27 @@ class Organism(object):
     self.max_x = max_x
     self.max_y = max_y
     self.vision_range = vision_range # how far can organims see
+
+    # add a brain
+    self.brain = self.gen_brain()
+
     self.position = self.getRandomPosition()
     self.orientation = math.radians(random.randint(1, 360))
-    self.inputLayer = {
+
+    # input layer
+    self.senses = {
       # 'direction': [distance, isSame, isDiff]
-      'above': [0.0, 0, 0],
-      'below': [0.0, 0, 0],
-      'left': [0.0, 0, 0],
-      'right': [0.0, 0, 0]
+      'above': [0.0, 0.0],
+      'below': [0.0, 0.0],
+      'left': [0.0, 0.0],
+      'right': [0.0, 0.0]
     }
+
+  def gen_brain(self):
+    def brain(senses):
+      return  math.radians(random.randint(1, 360))
+        
+    return brain
 
   def detectCollisions(self, p):
     # assume predator and prey are circles
@@ -93,16 +108,16 @@ class Organism(object):
     if not saw_something:
       self.color = self.base_color
 
-  def activate(self, dirr, dist, sameness):
+  def activate(self, dirr, dist, is_same):
     # Vision activation values:
     # 1.0 -> collision
     # 0.0 -> nothing in range
     activation = 1.0 - float(dist) / float(self.vision_range)
 
-    # neuron only detects closest other organism
-    if activation > self.inputLayer[dirr][0]:
-      #                       [ distance,  isSame,         isDiff       ]
-      self.inputLayer[dirr] = [activation, int(sameness), 1 - int(sameness)]
+    # only senses closes organism of type
+    # first weight senses like organims, second weight senses different
+    neuron = int(is_same)
+    self.senses[dirr][neuron] = max(self.senses[dirr][neuron], activation)
  
   def getRandomPosition(self):
     x_coord = random.randint(0, self.max_x)
@@ -119,15 +134,18 @@ class Organism(object):
     return self.position['y']
 
   def resetInputLayer(self):
-    self.inputLayer = {
-      # 'direction': [distance, isPrey, isPredator]
-      'above': [0.0, 0, 0],
-      'below': [0.0, 0, 0],
-      'left': [0.0, 0, 0],
-      'right': [0.0, 0, 0]
+    self.senses = {
+      # 'direction': [same, other]
+      'above': [0.0, 0.0],
+      'below': [0.0, 0.0],
+      'left': [0.0, 0.0],
+      'right': [0.0, 0.0]
     }
 
   def updatePosition(self):
+    # update lifespan to help judge fitness
+    self.lifespan += 1
+
     # print "I'm a %s seeing %s" % (self.o_type, self.o_type)
     # current coordinates
     curr_x = self.getX()
@@ -138,6 +156,9 @@ class Organism(object):
       self.velocity *= -1
     elif curr_y <= 0 or curr_y >= self.max_y:
       self.velocity *= -1
+
+    # update orientation
+    self.orientation = self.brain(self.senses)
 
     # how much organism will move in x and y direction?
     x_delta = int(round(math.cos(self.orientation) * self.velocity)) 
@@ -153,7 +174,7 @@ class Organism(object):
 
     # reset activations
     self.resetInputLayer()
-    # print self.inputLayer
+    # print self.senses
 
 class Prey(Organism):
   def __init__(self, o_type, size, color, velocity, max_x, max_y, vision):
