@@ -1,5 +1,12 @@
 import math, random, numpy
 
+PREY = 'prey'
+PRED = 'pred'
+ABOVE = 'above'
+BELOW = 'below'
+LEFT = 'left'
+RIGHT = 'right'
+
 
 class Organism(object):
   def __init__(self, o_type, size, color, velocity, max_x, max_y, vision_range):
@@ -25,20 +32,69 @@ class Organism(object):
     # input layer
     self.senses = {
       # 'direction': [distance, isSame, isDiff]
-      'above': [0.0, 0.0],
-      'below': [0.0, 0.0],
-      'left': [0.0, 0.0],
-      'right': [0.0, 0.0]
+      ABOVE: [0.0, 0.0],
+      BELOW: [0.0, 0.0],
+      LEFT: [0.0, 0.0],
+      RIGHT: [0.0, 0.0]
     }
 
   def gen_brain(self):
     def brain(senses):
       # flee different if prey
       # turn away from closest different
-      if self.o_type == 'prey':
-        pass
+      if self.o_type == PREY:
+        curr_max_same = 0
+        max_dirr_same = None
+        curr_max_diff = 0
+        max_dirr_diff = None
+        for sense in senses:
+          if senses[sense][0] > curr_max_diff:
+            curr_max_diff = senses[sense][0]
+            max_dirr_diff = sense
+          if senses[sense][1] > curr_max_same:
+            curr_max_same = senses[sense][1]
+            max_dirr_same = sense
+
+        if not max_dirr_diff:
+          if not max_dirr_same:
+            return self.orientation
+          elif max_dirr_same == ABOVE or max_dirr_same == LEFT:
+            return self.orientation - .1
+          elif max_dirr_same == RIGHT or max_dirr_same == BELOW:
+            return self.orientation + .1
+        elif max_dirr_diff == ABOVE or max_dirr_diff == LEFT:
+          return self.orientation - .1
+        elif max_dirr_diff == RIGHT or max_dirr_diff == BELOW:
+          return self.orientation + .1
+          
+        
       #return math.radians(random.randint(1, 360))
       #print senses
+      if self.o_type == PRED:
+        curr_max_same = 0
+        max_dirr_same = None
+        curr_max_diff = 0
+        max_dirr_diff = None
+        for sense in senses:
+          if senses[sense][0] > curr_max_diff:
+            curr_max_diff = senses[sense][0]
+            max_dirr_diff = sense
+          if senses[sense][1] > curr_max_same:
+            curr_max_same = senses[sense][1]
+            max_dirr_same = sense
+
+        if not max_dirr_diff:
+          if not max_dirr_same:
+            return self.orientation
+          elif max_dirr_same == ABOVE or max_dirr_same == LEFT:
+            return self.orientation + .1
+          elif max_dirr_same == RIGHT or max_dirr_same == BELOW:
+            return self.orientation - .1
+        elif max_dirr_diff == ABOVE or max_dirr_diff == LEFT:
+          return self.orientation - .1
+        elif max_dirr_diff == RIGHT or max_dirr_diff == BELOW:
+          return self.orientation + .1
+
       return self.orientation
         
     return brain
@@ -99,10 +155,10 @@ class Organism(object):
       # find whether closest point on organism (C) is within the wedge
       # https://stackoverflow.com/questions/13652518/efficiently-find-points-inside-a-circle-sector
       wedges = [
-        ['above', D1],
-        ['left',  D2],
-        ['below', D3],
-        ['right', D4]
+        [ABOVE, D1],
+        [LEFT,  D2],
+        [BELOW, D3],
+        [RIGHT, D4]
       ]
 
       for i in range(len(wedges)):
@@ -152,7 +208,7 @@ class Organism(object):
       data = self.detectCollisions(p)
       
       if data['collision']:
-        # if self.o_type == 'pred' and p.o_type == 'prey':
+        # if self.o_type == PRED and p.o_type == PREY:
         #  print "%s [%s], eats %s [%s]" % (id(self), self.o_type, id(p), p.o_type)
         handleCollision(p)
 
@@ -171,8 +227,8 @@ class Organism(object):
     # 0.0 -> nothing in range
     activation = 1.0 - float(dist) / float(self.vision_range)
 
-    # only senses closes organism of type
-    # first weight senses like organims, second weight senses different
+    # only senses closest organism of type
+    # first weight senses like organisms, second weight senses different organisms
     neuron = int(is_same)
     self.senses[dirr][neuron] = max(self.senses[dirr][neuron], activation)
  
@@ -193,10 +249,10 @@ class Organism(object):
   def resetInputLayer(self):
     self.senses = {
       # 'direction': [same, other]
-      'above': [0.0, 0.0],
-      'below': [0.0, 0.0],
-      'left': [0.0, 0.0],
-      'right': [0.0, 0.0]
+      ABOVE: [0.0, 0.0],
+      BELOW: [0.0, 0.0],
+      LEFT: [0.0, 0.0],
+      RIGHT: [0.0, 0.0]
     }
 
   def updatePosition(self):
