@@ -1,4 +1,4 @@
-import math, random
+import math, random, numpy
 
 
 class Organism(object):
@@ -33,7 +33,7 @@ class Organism(object):
 
   def gen_brain(self):
     def brain(senses):
-      return  math.radians(random.randint(1, 360))
+      return math.radians(random.randint(1, 360))
         
     return brain
 
@@ -44,39 +44,89 @@ class Organism(object):
     # self coordinates
     s_x = self.getX()
     s_y = self.getY()
+    S = numpy.array([s_x, s_y])
 
     # other organism coords
     p_x = p.getX()
     p_y = p.getY()
+    P = numpy.array([p_x, p_y])
 
     # how far apart are the organisms
-    dist_bt_centers = math.sqrt((s_x - p_x)**2 + (s_y - p_y)**2)
+    # dist_bt_centers = math.sqrt((s_x - p_x)**2 + (s_y - p_y)**2)
+    dist_bt_centers = numpy.linalg.norm(S-P)
 
     # Do they collide
     collision = dist_bt_centers <= self.size + p.size
 
     # Does self see other
-    sees_p = dist_bt_centers <= self.size + p.size + self.vision_range
+    sees_p = dist_bt_centers <= (p.size + self.vision_range)
 
-    # What direction is the other from self
-    above, below, left, right, dist = False, False, False, False, 0.0
+    dirr, sight_dist = None, 0
+
     if sees_p:
-      # one of each direction pair must be <= to prevent blindspot
-      above = s_y <= p_y
-      below = s_y > p_y
-      left = s_x <= p_x
-      right = s_x > p_x
-      dist = dist_bt_centers # only gets distance if p in sight range
+      # Direction is relative to self and depends on orientation
+      # We are computing whether the point on the organism closest to us is within
+      # each of our site wedges. Can only be seen by one wedge at a time.
+
+      # Find point on organism closest to self (C)
+      # https://math.stackexchange.com/questions/127613/closest-point-on-circle-edge-from-point-outside-inside-the-circle
+      Cx = s_x + self.vision_range * (p_x - s_x) / dist_bt_centers 
+      Cy = s_y + self.vision_range * (p_y - s_y) / dist_bt_centers 
+      C = numpy.array([Cx, Cy])
+
+      # Find distance between center of self and closest point on other organism (C)
+      #sight_dist = math.sqrt((s_x - Cx)**2 + (s_y - Cy)**2)
+      sight_dist = numpy.linalg.norm(S-C)
+
+      # Get current vectors for each sight wedge
+      D1x = sight_dist * math.cos(self.orientation) + s_x
+      D1y = sight_dist * math.sin(self.orientation) + s_y
+
+      # Since our sight vectors are perpendicular (normal) to each other
+      # we can find the other wedges easily via rotation
+      D1 = numpy.array([D1x, D1y])
+      D2 = numpy.array([-D1y, D1x])
+      D3 = numpy.array([-D1x, -D1y])
+      D4 = numpy.array([D1y, -D1x])
+
+      # For each sight wedge (defined by orientation and site_distance)
+      # find whether closest point on organism (C) is within the wedge
+      # https://stackoverflow.com/questions/13652518/efficiently-find-points-inside-a-circle-sector
+      wedges = [
+        ['above', D1],
+        ['left',  D2],
+        ['below', D3],
+        ['right', D4]
+      ]
+
+      for i in range(len(wedges)):
+        D = wedges[i][1]
+
+        # Is C counter-clockwise of wedge starting arm?
+        # i.e. projection of C onto counter-clockwise normal N of D positive?
+        # Bc wedges are already normal to each other, we can just grab the
+        # coords of neighboring wedge
+        N = wedges[(i + 1) % len(wedges)][1]
+
+        # Here we define the boundry bt wedges to be from defining vector up to
+        # but not including next wedge 
+        is_ccw = numpy.dot(C, N) >= 0
+
+        # Is C clockwise of wedge ending arm?
+        # wedges are already normal to each other
+        is_cw = numpy.dot(C, D) > 0
+
+        # Can only be true for one wedge
+        if is_ccw and is_cw:
+          dirr = wedges[i][0] 
+          break
 
     result = {
       'collision': collision,
       'sees_p': sees_p,
       'type': p.o_type,
-      'above': above,
-      'below': below,
-      'left': left,
-      'right': right,
-      'dist': dist
+      'dirr': dirr,
+      'dist': sight_dist
     }
 
     return result
@@ -100,9 +150,7 @@ class Organism(object):
       if data['sees_p']:
         self.color = (255,255,255)
         saw_something = True
-        for dirr in ['above', 'below', 'left', 'right']:
-          if data[dirr]:
-            self.activate(dirr, data['dist'], (self.o_type == data['type']))
+        self.activate(data['dirr'], data['dist'], (self.o_type == data['type']))
 
     # reset color when out of sight range
     if not saw_something:
