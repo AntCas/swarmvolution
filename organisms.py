@@ -42,59 +42,36 @@ class Organism(object):
     def brain(senses):
       # flee different if prey
       # turn away from closest different
-      if self.o_type == PREY:
-        curr_max_same = 0
-        max_dirr_same = None
-        curr_max_diff = 0
-        max_dirr_diff = None
-        for sense in senses:
-          if senses[sense][0] > curr_max_diff:
-            curr_max_diff = senses[sense][0]
-            max_dirr_diff = sense
-          if senses[sense][1] > curr_max_same:
-            curr_max_same = senses[sense][1]
-            max_dirr_same = sense
+      curr_max_same = 0
+      max_dirr_same = None
+      curr_max_diff = 0
+      max_dirr_diff = None
 
-        if not max_dirr_diff:
-          if not max_dirr_same:
-            return self.orientation
-          elif max_dirr_same == ABOVE or max_dirr_same == LEFT:
-            return self.orientation - .1
-          elif max_dirr_same == RIGHT or max_dirr_same == BELOW:
-            return self.orientation + .1
-        elif max_dirr_diff == ABOVE or max_dirr_diff == LEFT:
-          return self.orientation - .1
-        elif max_dirr_diff == RIGHT or max_dirr_diff == BELOW:
-          return self.orientation + .1
-          
-        
-      #return math.radians(random.randint(1, 360))
-      #print senses
       if self.o_type == PRED:
-        curr_max_same = 0
-        max_dirr_same = None
-        curr_max_diff = 0
-        max_dirr_diff = None
-        for sense in senses:
-          if senses[sense][0] > curr_max_diff:
-            curr_max_diff = senses[sense][0]
-            max_dirr_diff = sense
-          if senses[sense][1] > curr_max_same:
-            curr_max_same = senses[sense][1]
-            max_dirr_same = sense
+        dirr = 1
+      else:
+        dirr = -1
 
-        if not max_dirr_diff:
-          if not max_dirr_same:
-            return self.orientation
-          elif max_dirr_same == ABOVE or max_dirr_same == LEFT:
-            return self.orientation + .1
-          elif max_dirr_same == RIGHT or max_dirr_same == BELOW:
-            return self.orientation - .1
-        elif max_dirr_diff == ABOVE or max_dirr_diff == LEFT:
-          return self.orientation - .1
-        elif max_dirr_diff == RIGHT or max_dirr_diff == BELOW:
-          return self.orientation + .1
+      for sense in senses:
+        if senses[sense][0] > curr_max_diff:
+          curr_max_diff = senses[sense][0]
+          max_dirr_diff = sense
+        if senses[sense][1] > curr_max_same:
+          curr_max_same = senses[sense][1]
+          max_dirr_same = sense
 
+      if not max_dirr_diff:
+        if not max_dirr_same:
+          return self.orientation
+        elif max_dirr_same == ABOVE or max_dirr_same == LEFT:
+          return self.orientation - .1 * dirr
+        elif max_dirr_same == RIGHT or max_dirr_same == BELOW:
+          return self.orientation + .1 * dirr
+      elif max_dirr_diff == ABOVE or max_dirr_diff == LEFT:
+        return self.orientation - .1 * dirr
+      elif max_dirr_diff == RIGHT or max_dirr_diff == BELOW:
+        return self.orientation + .1 * dirr
+          
       return self.orientation
         
     return brain
