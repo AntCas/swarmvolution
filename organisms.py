@@ -33,7 +33,13 @@ class Organism(object):
 
   def gen_brain(self):
     def brain(senses):
-      return math.radians(random.randint(1, 360))
+      # flee different if prey
+      # turn away from closest different
+      if self.o_type == 'prey':
+        pass
+      #return math.radians(random.randint(1, 360))
+      #print senses
+      return self.orientation
         
     return brain
 
@@ -63,7 +69,7 @@ class Organism(object):
 
     dirr, sight_dist = None, 0
 
-    if sees_p:
+    if sees_p and not collision:
       # Direction is relative to self and depends on orientation
       # We are computing whether the point on the organism closest to us is within
       # each of our site wedges. Can only be seen by one wedge at a time.
@@ -114,12 +120,15 @@ class Organism(object):
 
         # Is C clockwise of wedge ending arm?
         # wedges are already normal to each other
-        is_cw = numpy.dot(C, D) > 0
+        is_cw = numpy.dot(C, D) >= 0
 
         # Can only be true for one wedge
         if is_ccw and is_cw:
           dirr = wedges[i][0] 
           break
+
+    if sees_p and not dirr:
+      sees_p = False
 
     result = {
       'collision': collision,
