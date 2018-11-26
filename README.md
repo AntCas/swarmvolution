@@ -11,6 +11,8 @@ Will a group of neural-nets with aligned interests evolve cooperative behavior?
 * move behavior decisions into the organism classes
 * add organism type (PREY, PREDATOR) to organism class attributes
 * fix stats summary (double counting things currently)
+* implement nn brains
+* implement dna
 
 # TODO:
 * Implement fitness functions for prey and predators
