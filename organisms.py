@@ -1,4 +1,4 @@
-import math, random, numpy
+import math, random, numpy as np
 
 PREY = 'prey'
 PRED = 'pred'
@@ -23,8 +23,15 @@ class Organism(object):
     self.max_y = max_y
     self.vision_range = vision_range # how far can organims see
 
-    # add a brain
-    self.brain = self.gen_brain()
+    # initialize dna (defined as weights that control brain function)
+    self.dna = np.random.rand(40) # 40 = len(L) + len(O)
+    L, O = np.split(self.dna, [32]) # 32 = len(L) = num_nodes_hidden * num_nodes_input
+    L = np.split(L, 8) #
+    O = np.split(O, 4) # 
+
+    # Add the brain
+    self.brain = self.gen_brain(L, O)
+    #self.brain = self.gen_brain_dumb()
 
     self.position = self.getRandomPosition()
     self.orientation = math.radians(random.randint(1, 360))
@@ -38,7 +45,24 @@ class Organism(object):
       RIGHT: [0.0, 0.0]
     }
 
-  def gen_brain(self):
+  # perceptron driven brain
+  def gen_brain(self, hl_weights, ol_weights):
+    def sigmoid(x):
+      return 1 / (1 + np.exp(-x))
+
+    def relu(x):
+      return x * (x > 0)
+
+    def brain(senses):
+      input_layer = np.concatenate(senses.values())
+      hidden_layer = relu(np.dot(input_layer, hl_weights))
+      output_layer = relu(np.dot(hidden_layer, ol_weights))
+      return output_layer
+
+    return brain
+
+  # procedural if/then dumb brain
+  def gen_brain_dumb(self):
     def brain(senses):
       # flee different if prey
       # turn away from closest different
@@ -47,10 +71,7 @@ class Organism(object):
       curr_max_diff = 0
       max_dirr_diff = None
 
-      if self.o_type == PRED:
-        dirr = 1
-      else:
-        dirr = -1
+      is_pred = True if self.o_type == PRED else False
 
       for sense in senses:
         if senses[sense][0] > curr_max_diff:
@@ -62,15 +83,15 @@ class Organism(object):
 
       if not max_dirr_diff:
         if not max_dirr_same:
-          return self.orientation
+          return [0, 0]
         elif max_dirr_same == ABOVE or max_dirr_same == LEFT:
-          return self.orientation - .1 * dirr
+          return [0, .1] if is_pred else [.1, 0]
         elif max_dirr_same == RIGHT or max_dirr_same == BELOW:
-          return self.orientation + .1 * dirr
+          return [.1, 0] if is_pred else [0, .1]
       elif max_dirr_diff == ABOVE or max_dirr_diff == LEFT:
-        return self.orientation - .1 * dirr
+        return [0, .1] if is_pred else [.1, 0]
       elif max_dirr_diff == RIGHT or max_dirr_diff == BELOW:
-        return self.orientation + .1 * dirr
+        return [.1, 0] if is_pred else [0, .1]
           
       return self.orientation
         
@@ -83,16 +104,16 @@ class Organism(object):
     # self coordinates
     s_x = self.getX()
     s_y = self.getY()
-    S = numpy.array([s_x, s_y])
+    S = np.array([s_x, s_y])
 
     # other organism coords
     p_x = p.getX()
     p_y = p.getY()
-    P = numpy.array([p_x, p_y])
+    P = np.array([p_x, p_y])
 
     # how far apart are the organisms
     # dist_bt_centers = math.sqrt((s_x - p_x)**2 + (s_y - p_y)**2)
-    dist_bt_centers = numpy.linalg.norm(S-P)
+    dist_bt_centers = np.linalg.norm(S-P)
 
     # Do they collide
     collision = dist_bt_centers <= self.size + p.size
@@ -111,11 +132,11 @@ class Organism(object):
       # https://math.stackexchange.com/questions/127613/closest-point-on-circle-edge-from-point-outside-inside-the-circle
       Cx = s_x + self.vision_range * (p_x - s_x) / dist_bt_centers 
       Cy = s_y + self.vision_range * (p_y - s_y) / dist_bt_centers 
-      C = numpy.array([Cx, Cy])
+      C = np.array([Cx, Cy])
 
       # Find distance between center of self and closest point on other organism (C)
       #sight_dist = math.sqrt((s_x - Cx)**2 + (s_y - Cy)**2)
-      sight_dist = numpy.linalg.norm(S-C)
+      sight_dist = np.linalg.norm(S-C)
 
       # Get current vectors for each sight wedge
       D1x = sight_dist * math.cos(self.orientation) + s_x
@@ -123,10 +144,10 @@ class Organism(object):
 
       # Since our sight vectors are perpendicular (normal) to each other
       # we can find the other wedges easily via rotation
-      D1 = numpy.array([D1x, D1y])
-      D2 = numpy.array([-D1y, D1x])
-      D3 = numpy.array([-D1x, -D1y])
-      D4 = numpy.array([D1y, -D1x])
+      D1 = np.array([D1x, D1y])
+      D2 = np.array([-D1y, D1x])
+      D3 = np.array([-D1x, -D1y])
+      D4 = np.array([D1y, -D1x])
 
       # For each sight wedge (defined by orientation and site_distance)
       # find whether closest point on organism (C) is within the wedge
@@ -149,11 +170,11 @@ class Organism(object):
 
         # Here we define the boundry bt wedges to be from defining vector up to
         # but not including next wedge 
-        is_ccw = numpy.dot(C, N) >= 0
+        is_ccw = np.dot(C, N) >= 0
 
         # Is C clockwise of wedge ending arm?
         # wedges are already normal to each other
-        is_cw = numpy.dot(C, D) >= 0
+        is_cw = np.dot(C, D) >= 0
 
         # Can only be true for one wedge
         if is_ccw and is_cw:
@@ -248,7 +269,12 @@ class Organism(object):
       self.velocity *= -1
 
     # update orientation
-    self.orientation = self.brain(self.senses)
+    steering = self.brain(self.senses)
+
+    if steering[0] > steering[1]:
+      self.orientation -= .1
+    elif steering[0] < steering[1]:
+      self.orientation += .1
 
     # how much organism will move in x and y direction?
     x_delta = int(round(math.cos(self.orientation) * self.velocity)) 
