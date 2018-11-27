@@ -7,7 +7,7 @@
 }
 {\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc0\levelnfcn0\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{decimal\}.}{\leveltext\leveltemplateid1\'02\'00.;}{\levelnumbers\'01;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
 {\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
-\margl1440\margr1440\vieww18020\viewh8400\viewkind0
+\margl1440\margr1440\vieww19860\viewh8400\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\fs24 \cf0 Evolution of Adversarial Neural Net Swarms\
@@ -129,4 +129,41 @@ I     L   O\
 0 x 0\
 0\
 0\
-}
+\
+\ls1\ilvl0
+\f3\b Numpy makes it very easy to compute the output of a neural network\
+\
+\ls1\ilvl0relu vs sigmoid\
+\ls1\ilvl0
+\f2\b0 relu = x => max(0, x)\
+sigmoid = 1 / (1 + exp(-x))\
+\
+At 0.0 sigmoid returns .5 while relu returns 0, so relu makes more sense if we don\'92t want our organisms to react when they don\'92t see anything. \
+\
+With relu, the untrained model actually performs pretty well.\
+\
+\ls1\ilvl0Once we have training set up I\'92ll experiment with sigmoid to see if the organisms come up with more interesting default behavior.\
+\
+Well, when they can\'92t see anything, they are forced to either move in a straight-line or in a circle. Without changing inputs, they can\'92t change directions\
+\
+So testing with sigmoid would just be a test to see what radius circle they choose (and in what direction they choose to turn). Going straight would be a circle of infinite radius. \
+\
+\ls1\ilvl0
+\f3\b Short term memory\
+\ls1\ilvl0
+\f2\b0 \
+It would be interesting to give the organisms some short term memory. e.g. let them remember what the last thing they sensed was, or even a few sense ticks back. Would this be equivalent to having multiple input layers?\
+\
+Might allow more interesting behavior when they haven\'92t been able to see anything for a couple ticks, but they remember seeing something say 5 ticks ago. Could learn to turn around?\
+\
+Could also let them decide to keep tracking something even when new prey or predator comes into view.\
+\
+\ls1\ilvl0
+\f3\b Near-sightedness\
+\ls1\ilvl0
+\f2\b0 Organisms can only sense the closest ally and enemy in each of 4 directions.\
+\
+\ls1\ilvl0
+\f3\b Round-sightedness\
+\ls1\ilvl0
+\f2\b0 Organism sight is currently omni-directional. Could experiment with the arrangement of senses. Maybe only let them see in front of themselves (in the direction of travel) or even make the placement of sight neurons part of their genetic code. Would they still evolve omni-sense? Would predators evolve directional sense to keep them more focused on one prey?}

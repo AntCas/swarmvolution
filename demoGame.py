@@ -8,8 +8,7 @@ import sys
 # local imports
 from organisms import Prey, Predator
 
-# ARGPARSE
-show_world = '-blind' not in sys.argv
+# ---------------- HYPER-PARAMETERS ---------------
 
 # COLORS
 BLACK = 0, 0, 0
@@ -23,7 +22,7 @@ CANVAS_WIDTH = 640
 
 # Prey
 PREY_TYPE = 'prey'
-PREY_POP = 50
+PREY_POP = 30
 PREY_SIZE = 2
 PREY_VELOCITY = 1
 PREY_COLOR = BLUE
@@ -31,14 +30,145 @@ PREY_VISION = 50
 
 # PREDATOR
 PRED_TYPE = 'pred'
-PRED_POP = 4
+PRED_POP = 3
 PRED_SIZE = 8
 PRED_VELOCITY = 3
 PRED_COLOR = ORANGE
 PRED_VISION = 75
 
 # UNIVERSE
-GEN_TIME_LIMIT = 1000
+GEN_TIME_LIMIT = 200
+GENERATIONS = 50
+
+# EVOLUTION
+MUTATION_RATE = .01
+
+
+# ---------------- STATS & LOGS ---------------
+
+def getStats(predators, prey, generation):
+  # calc stats
+  prey_eaten = sum([p.score for p in predators])
+  living_prey = PREY_POP - prey_eaten
+  avg_lifespan_prey = sum([p.score for p in prey]) / PREY_POP
+
+  # init text object to display stats
+  stats = ("Gen [%s of %s] | Living prey: %s, Prey eaten: %s, Avg prey lifespan: %s"
+            % (generation, GENERATIONS, living_prey, prey_eaten, avg_lifespan_prey))
+
+  return stats
+
+def printStatsToScreen(predators, prey, generation):
+  text = basic_font.render(getStats(predators, prey, generation), True, WHITE)
+  textrect = text.get_rect()
+  textrect.centerx = screen.get_rect().centerx
+  textrect.centery = screen.get_rect().centery
+
+  # print stats
+  screen.blit(text, textrect)
+
+# ---------------- DRAW & UPDATE ---------------
+
+def drawOrganisms(organisms):
+  for p in organisms:
+    if p.isAlive():
+      pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
+
+def updatePositions(predators, prey):
+  # We handle collissions for both types before updating positions so that
+  # the world state doesn't change for one set of organisms before the other
+
+  # predators must be processed first so that they can eat before their prey dies
+  for o in itertools.chain(predators, prey):
+    if o.is_alive:
+      o.calcCollisions(itertools.chain(predators, prey))
+
+  for o in itertools.chain(predators, prey):
+    if o.is_alive:
+      o.updatePosition()
+
+# ---------------- GENETICS ---------------
+
+def new_pred(dna=None):
+  return Predator(PRED_TYPE, PRED_SIZE, PRED_COLOR, PRED_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PRED_VISION, dna)
+
+def new_prey(dna=None):
+  return Prey(PREY_TYPE, PREY_SIZE, PREY_COLOR, PREY_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PREY_VISION, dna)
+
+# randomly mutates a gene some percentage of the time
+def mutate(gene, rate):
+    if random.random() < rate:
+        return random.random()
+    else:
+        return gene
+
+# breeds two organisms
+def breed(mother, father, species):
+    # A child randomly inherits each gene (weight) from either the mother or the father
+    child_dna = [0] * len(mother.dna)
+    for i in xrange(len(mother.dna)):
+        child_dna[i] = mother.dna[i] if random.random() < .5 else father.dna[i]
+        child_dna[i] = mutate(child_dna[i], MUTATION_RATE)
+
+    if species == PREY_TYPE:
+      return new_prey(child_dna)
+    else:
+      return new_pred(child_dna)
+
+# assigns each organism a breeding potential based on its relative fitness
+def gen_gene_pool(generation):
+    # each organism gets exactly the share of the gene pool it contributes
+    total_fitness = sum(o.score for o in generation)
+
+    # sometimes predators didn't get to eat anything, so they're all equally fit
+    if total_fitness == 0:
+      gene_pool = [(o, 1 / len(generation)) for o in generation]
+    else:
+      gene_pool = [(o, o.score / float(total_fitness)) for o in generation]
+    return gene_pool
+
+# selects an organism to be a father based on its relative fitness
+# source: http://stackoverflow.com/questions/3679694/a-weighted-version-of-random-choice
+def select_father(gene_pool):
+    total = sum(w for c, w in gene_pool)
+    r = random.uniform(0, total)
+    upto = 0
+    for c, w in gene_pool:
+        if upto + w >= r:
+            return c
+        upto += w
+    print gene_pool
+    assert False, "Shouldn't get here" # No more diversity left in the gene pool
+
+def next_generation(gen, species):
+  next_gen = [None] * len(gen)
+
+  # create the gene_pool roulette wheel
+  gene_pool = gen_gene_pool(gen)
+
+  # each organism gets to breed once (mother a signle offspring)
+  # strong organisms have better chance to breed again (father multiple offspring)
+  for i in xrange(len(gen)):
+    father = select_father(gene_pool)
+    next_gen[i] = breed(gen[i], father, species)
+
+  return next_gen
+
+def next_pred_generation(pred_gen):
+  if len(pred_gen) is 0: 
+    return [new_pred() for i in xrange(PRED_POP)]
+  return next_generation(pred_gen, PRED_TYPE)
+
+def next_prey_generation(prey_gen):
+  if len(prey_gen) is 0:
+    # intialize first generation of prey and predators
+    return [new_prey() for i in xrange(PREY_POP)]
+  return next_generation(prey_gen, PREY_TYPE)
+
+# ---------------- RUN THE UNIVERSE ---------------
+
+# ARGPARSE
+show_world = '-blind' not in sys.argv
 
 if show_world:
   # init font
@@ -53,69 +183,29 @@ if show_world:
   # init clock
   clock = pygame.time.Clock()
 
-# intialize first generation of prey and predators
-prey = [Prey(PREY_TYPE, PREY_SIZE, PREY_COLOR, PREY_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PREY_VISION) for i in xrange(PREY_POP)]
-predators = [Predator(PRED_TYPE, PRED_SIZE, PRED_COLOR, PRED_VELOCITY, CANVAS_WIDTH, CANVAS_HEIGHT, PRED_VISION) for i in xrange(PRED_POP)]
+prey, pred = [], []
 
-def getStats():
-  # calc stats
-  prey_eaten = sum([p.prey_eaten for p in predators])
-  living_prey = PREY_POP - prey_eaten
+# Generation loop
+for i in xrange(GENERATIONS):
+  prey = next_prey_generation(prey)
+  pred = next_pred_generation(pred)
 
-  # init text object to display stats
-  stats = "Living prey: %s, Prey eaten: %s" % (living_prey, prey_eaten)
-
-  return stats
-
-def printStatsToScreen():
-  text = basic_font.render(getStats(), True, WHITE)
-  textrect = text.get_rect()
-  textrect.centerx = screen.get_rect().centerx
-  textrect.centery = screen.get_rect().centery
-
-  # print stats
-  screen.blit(text, textrect)
-
-def drawOrganisms():
-  for p in prey:
-    if p.isAlive():
-      pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
-
-  for p in predators:
-    pygame.draw.circle(screen, p.color, p.getCoords(), p.size)
-
-def updatePositions():
-  # We handle collissions for both types before updating positions so that
-  # the world state doesn't change for one set of organisms before the other
-
-  # predators must be processed first so that they can eat before their prey dies
-  for o in itertools.chain(predators, prey):
-    if o.is_alive:
-      o.calcCollisions(itertools.chain(predators, prey))
-
-  for o in itertools.chain(predators, prey):
-    if o.is_alive:
-      o.updatePosition()
-
-# Universe loop, draws a new frame every iteration
-ticks = GEN_TIME_LIMIT
-while ticks > 0:
-  if show_world:
-    clock.tick() # can pass an int (max framerate) to tick() to slow down time
+  # Universe loop, draws a new frame every iteration
+  for j in xrange(GEN_TIME_LIMIT):
+    if show_world:
+      clock.tick() # can pass an int (max framerate) to tick() to slow down time
+     
+      for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+          sys.exit()
    
-    for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-        sys.exit()
- 
-    screen.fill(BLACK)
-    drawOrganisms() 
-    printStatsToScreen()
+      screen.fill(BLACK)
+      drawOrganisms(itertools.chain(pred, prey)) 
+      printStatsToScreen(pred, prey, i)
 
-    # Progress to the next frame of the universe
-    pygame.display.flip()
+      # Progress to the next frame of the universe
+      pygame.display.flip()
 
-  updatePositions()
+    updatePositions(pred, prey)
 
-  ticks -= 1
-
-print getStats()
+  print getStats(pred, prey, i)

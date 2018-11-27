@@ -9,9 +9,9 @@ RIGHT = 'right'
 
 
 class Organism(object):
-  def __init__(self, o_type, size, color, velocity, max_x, max_y, vision_range):
+  def __init__(self, o_type, size, color, velocity, max_x, max_y, vision_range, dna=None):
     self.is_alive = True
-    self.lifespan = 0
+    self.score = 0
 
     # input variables
     self.o_type = o_type
@@ -24,7 +24,11 @@ class Organism(object):
     self.vision_range = vision_range # how far can organims see
 
     # initialize dna (defined as weights that control brain function)
-    self.dna = np.random.rand(40) # 40 = len(L) + len(O)
+    if dna:
+      self.dna = dna
+    else:
+      self.dna = np.random.rand(40) # 40 = len(L) + len(O)
+
     L, O = np.split(self.dna, [32]) # 32 = len(L) = num_nodes_hidden * num_nodes_input
     L = np.split(L, 8) #
     O = np.split(O, 4) # 
@@ -44,6 +48,9 @@ class Organism(object):
       LEFT: [0.0, 0.0],
       RIGHT: [0.0, 0.0]
     }
+
+  def isAlive(self):
+    return self.is_alive
 
   # perceptron driven brain
   def gen_brain(self, hl_weights, ol_weights):
@@ -254,9 +261,6 @@ class Organism(object):
     }
 
   def updatePosition(self):
-    # update lifespan to help judge fitness
-    self.lifespan += 1
-
     # print "I'm a %s seeing %s" % (self.o_type, self.o_type)
     # current coordinates
     curr_x = self.getX()
@@ -293,11 +297,8 @@ class Organism(object):
     # print self.senses
 
 class Prey(Organism):
-  def __init__(self, o_type, size, color, velocity, max_x, max_y, vision):
-    Organism.__init__(self, o_type, size, color, velocity, max_x, max_y, vision)
-
-  def isAlive(self):
-    return self.is_alive
+  def __init__(self, o_type, size, color, velocity, max_x, max_y, vision, dna=None):
+    Organism.__init__(self, o_type, size, color, velocity, max_x, max_y, vision, dna)
 
   def calcCollisions(self, organisms):
     def handleCollision(o):
@@ -306,13 +307,15 @@ class Prey(Organism):
 
     super(Prey, self).calcCollisions(organisms, handleCollision)
 
+    if self.is_alive:
+      self.score += 1
+
   def die(self):
     self.is_alive = False
 
 class Predator(Organism):
-  def __init__(self, o_type, size, color, velocity, max_x, max_y, vision):
-    Organism.__init__(self, o_type, size, color, velocity, max_x, max_y, vision)
-    self.prey_eaten = 0
+  def __init__(self, o_type, size, color, velocity, max_x, max_y, vision, dna=None):
+    Organism.__init__(self, o_type, size, color, velocity, max_x, max_y, vision, dna)
 
   def calcCollisions(self, organisms):
     def handleCollision(o):
@@ -322,5 +325,5 @@ class Predator(Organism):
     super(Predator, self).calcCollisions(organisms, handleCollision)
 
   def eatPrey(self):
-    self.prey_eaten += 1
+    self.score += 1
 
