@@ -63,7 +63,7 @@ class Organism(object):
     def brain(senses):
       input_layer = np.concatenate(senses.values())
       hidden_layer = relu(np.dot(input_layer, hl_weights))
-      output_layer = relu(np.dot(hidden_layer, ol_weights))
+      output_layer = sigmoid(np.dot(hidden_layer, ol_weights))
       return output_layer
 
     return brain
