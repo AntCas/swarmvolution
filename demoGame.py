@@ -19,12 +19,12 @@ ORANGE = 255, 86, 0
 BLUE = 0, 169, 255
 
 # DIMENSIONS 
-CANVAS_HEIGHT = 280
-CANVAS_WIDTH = 640
+CANVAS_HEIGHT = 480 #480
+CANVAS_WIDTH = 640 #640
 
 # Prey
 PREY_TYPE = 'prey'
-PREY_POP = 40
+PREY_POP = 50
 PREY_SIZE = 2
 PREY_VELOCITY = 1
 PREY_COLOR = BLUE
@@ -32,15 +32,15 @@ PREY_VISION = 20
 
 # PREDATOR
 PRED_TYPE = 'pred'
-PRED_POP = 10
+PRED_POP = 5
 PRED_SIZE = 6
 PRED_VELOCITY = 3
 PRED_COLOR = ORANGE
 PRED_VISION = 40
 
 # UNIVERSE
-GEN_TIME_LIMIT = 100
-GENERATIONS = 1
+GEN_TIME_LIMIT = 1000
+GENERATIONS = 1000
 
 # EVOLUTION
 MUTATION_RATE = .01
@@ -212,14 +212,16 @@ for i in xrange(GENERATIONS):
 
   print getStats(pred, prey, i)
 
-# Save the brains
-prey_dna = np.array([p.dna for p in prey])
-pred_dna = np.array([p.dna for p in pred])
+  # save brains every 100 generations
+  if (i+1 % 100 == 0):
+    # Save the brains
+    prey_dna = np.array([p.dna for p in prey])
+    pred_dna = np.array([p.dna for p in pred])
 
-id_str = hashlib.md5(str(prey_dna)+str(pred_dna)).hexdigest()
+    id_str = hashlib.md5(str(prey_dna)+str(pred_dna)).hexdigest()
 
-with open('prey_dna_gen_%s_%s.npy' % (GENERATIONS, id_str), 'w') as o:
-  np.save(o, prey_dna)
+    with open('prey_dna_gen_%s_%s.npy' % (i+1, id_str), 'w') as o:
+      np.save(o, prey_dna)
 
-with open('pred_dna_gen_%s_%s.npy' % (GENERATIONS, id_str), 'w') as o:
-  np.save(o, pred_dna)
+    with open('pred_dna_gen_%s_%s.npy' % (i+1, id_str), 'w') as o:
+      np.save(o, pred_dna)
