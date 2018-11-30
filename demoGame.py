@@ -1,4 +1,5 @@
 # system imports
+import argparse
 import hashlib
 import itertools
 import math
@@ -28,7 +29,7 @@ PREY_POP = 50
 PREY_SIZE = 2
 PREY_VELOCITY = 1
 PREY_COLOR = BLUE
-PREY_VISION = 20
+PREY_VISION = 40
 
 # PREDATOR
 PRED_TYPE = 'pred'
@@ -39,7 +40,7 @@ PRED_COLOR = ORANGE
 PRED_VISION = 40
 
 # UNIVERSE
-GEN_TIME_LIMIT = 1000
+GEN_TIME_LIMIT = 850
 GENERATIONS = 1000
 
 # EVOLUTION
@@ -158,19 +159,32 @@ def next_generation(gen, species):
 
 def next_pred_generation(pred_gen):
   if len(pred_gen) is 0: 
+    if args.predDna is not None:
+      with open(args.predDna, 'r') as o:
+        pred_dna = np.load(o)
+        return [new_pred(pred_dna[i]) for i in xrange(len(pred_dna))]
     return [new_pred() for i in xrange(PRED_POP)]
   return next_generation(pred_gen, PRED_TYPE)
 
 def next_prey_generation(prey_gen):
   if len(prey_gen) is 0:
-    # intialize first generation of prey and predators
+    if args.preyDna is not None:
+      with open(args.preyDna, 'r') as o:
+        prey_dna = np.load(o)
+        return [new_prey(prey_dna[i]) for i in xrange(len(prey_dna))]
     return [new_prey() for i in xrange(PREY_POP)]
   return next_generation(prey_gen, PREY_TYPE)
 
 # ---------------- RUN THE UNIVERSE ---------------
 
 # ARGPARSE
-show_world = '-blind' not in sys.argv
+parser = argparse.ArgumentParser()
+parser.add_argument("--blind", action="store_true", help="don't show the gameworld")
+parser.add_argument("--predDna", help="load pre-trained predator dna from file")
+parser.add_argument("--preyDna", help="load pre-trained prey dna from file")
+args = parser.parse_args()
+
+show_world = not args.blind
 
 if show_world:
   # init font
@@ -213,7 +227,7 @@ for i in xrange(GENERATIONS):
   print getStats(pred, prey, i)
 
   # save brains every 100 generations
-  if (i+1 % 100 == 0):
+  if ((i+1) % 25 == 0):
     # Save the brains
     prey_dna = np.array([p.dna for p in prey])
     pred_dna = np.array([p.dna for p in pred])

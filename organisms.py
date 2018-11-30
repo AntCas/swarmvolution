@@ -24,7 +24,7 @@ class Organism(object):
     self.vision_range = vision_range # how far can organims see
 
     # initialize dna (defined as weights that control brain function)
-    if dna:
+    if dna is not None:
       self.dna = dna
     else:
       self.dna = np.random.rand(40) # 40 = len(L) + len(O)
@@ -63,7 +63,7 @@ class Organism(object):
     def brain(senses):
       input_layer = np.concatenate(senses.values())
       hidden_layer = relu(np.dot(input_layer, hl_weights))
-      output_layer = sigmoid(np.dot(hidden_layer, ol_weights))
+      output_layer = relu(np.dot(hidden_layer, ol_weights))
       return output_layer
 
     return brain
