@@ -1,6 +1,8 @@
 # system imports
+import hashlib
 import itertools
 import math
+import numpy as np
 import pygame
 import random
 import sys
@@ -37,8 +39,8 @@ PRED_COLOR = ORANGE
 PRED_VISION = 40
 
 # UNIVERSE
-GEN_TIME_LIMIT = 500
-GENERATIONS = 100
+GEN_TIME_LIMIT = 100
+GENERATIONS = 1
 
 # EVOLUTION
 MUTATION_RATE = .01
@@ -209,3 +211,15 @@ for i in xrange(GENERATIONS):
     updatePositions(pred, prey)
 
   print getStats(pred, prey, i)
+
+# Save the brains
+prey_dna = np.array([p.dna for p in prey])
+pred_dna = np.array([p.dna for p in pred])
+
+id_str = hashlib.md5(str(prey_dna)+str(pred_dna)).hexdigest()
+
+with open('prey_dna_gen_%s_%s.npy' % (GENERATIONS, id_str), 'w') as o:
+  np.save(o, prey_dna)
+
+with open('pred_dna_gen_%s_%s.npy' % (GENERATIONS, id_str), 'w') as o:
+  np.save(o, pred_dna)
